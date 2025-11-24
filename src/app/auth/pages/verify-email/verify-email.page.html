@@ -1,0 +1,125 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+  <div class="w-full max-w-md bg-white shadow rounded-xl p-6">
+    <h1 class="text-2xl font-semibold text-gray-900 mb-1">Verify your email</h1>
+
+    @if (loading()) {
+    <div class="flex flex-col items-center justify-center py-8">
+      <span
+        class="size-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"
+      ></span>
+      <p class="text-sm text-gray-600">Verifying your email...</p>
+    </div>
+    } @else if (verificationStatus() === 'success') {
+    <div class="flex flex-col items-center justify-center py-8">
+      <div class="size-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+        <svg
+          class="w-8 h-8 text-green-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          ></path>
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">Email Verified Successfully!</h2>
+      <p class="text-sm text-gray-600 text-center">
+        Your email has been verified. Redirecting to login page...
+      </p>
+    </div>
+    } @else if (verificationStatus() === 'error') {
+    <div class="flex flex-col items-center justify-center py-8">
+      <div class="size-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+        <svg
+          class="w-8 h-8 text-red-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          ></path>
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">Verification Failed</h2>
+      <p class="text-sm text-gray-600 text-center mb-4">
+        The verification link is invalid or has expired. Please request a new verification email.
+      </p>
+    </div>
+    } @else {
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600 mb-6">
+        Please check your inbox for the verification link. Click the link in the
+        email to verify your account.
+      </p>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p class="text-sm text-blue-900 mb-2">
+          <strong>Testing with Ethereal Email?</strong>
+        </p>
+        <a
+          href="https://ethereal.email/messages"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sm text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1"
+        >
+          Check your inbox at Ethereal Email
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            ></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+    }
+
+    <div class="mt-6 pt-6 border-t">
+      <p class="text-sm text-gray-600 mb-2">Didn't receive the email?</p>
+      <form
+        (ngSubmit)="resendEmail()"
+        [formGroup]="resendForm"
+        class="flex flex-col gap-2"
+      >
+        <app-input-field
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          controlName="email"
+          [error]="resendForm.controls.email.touched && resendForm.controls.email.invalid ? (resendForm.controls.email.errors?.['required'] ? 'Email is required' : (resendForm.controls.email.errors?.['email'] ? 'Enter a valid email' : '')) : ''"
+        ></app-input-field>
+        <button
+          type="submit"
+          [disabled]="resending()"
+          class="w-full text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+        >
+          @if (!resending()) {
+          <span>Resend confirmation email</span>
+          } @if (resending()) {
+          <span class="inline-flex items-center gap-2">
+            <span
+              class="size-3 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin"
+            ></span>
+            Sending...
+          </span>
+          }
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

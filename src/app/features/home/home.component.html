@@ -1,0 +1,25 @@
+<app-hero
+  [(city)]="city"
+  [(type)]="type"
+  [(minPrice)]="minPrice"
+  [(maxPrice)]="maxPrice"
+/>
+
+<section class="py-12">
+  <div class="container mx-auto px-4">
+    <app-listings
+      [city]="city"
+      [type]="type"
+      [minPrice]="minPrice"
+      [maxPrice]="maxPrice"
+    />
+  </div>
+</section>
+
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <app-features />
+  </div>
+</section>
+
+

@@ -1,0 +1,122 @@
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+  <h1 class="text-3xl font-bold text-gray-900 mb-8">List Your Property</h1>
+
+  <form
+    [formGroup]="houseForm"
+    (ngSubmit)="onSubmit()"
+    class="bg-white rounded-lg shadow-md p-8 space-y-6"
+  >
+    <app-input-field
+      label="Title"
+      type="text"
+      placeholder="Modern Apartment in Downtown"
+      controlName="Title"
+      [error]="houseForm.controls.Title.touched && houseForm.controls.Title.invalid ? (houseForm.controls.Title.errors?.['required'] ? 'Title is required' : (houseForm.controls.Title.errors?.['minlength'] ? 'Title must be at least 3 characters' : '')) : ''"
+    ></app-input-field>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">
+        Description
+      </label>
+      <textarea
+        formControlName="Description"
+        rows="5"
+        placeholder="Describe your property..."
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900"
+      ></textarea>
+      @if (houseForm.controls.Description.touched && houseForm.controls.Description.invalid) {
+      <p class="mt-1 text-xs text-red-600">
+        @if (houseForm.controls.Description.errors?.['required']) {
+        Description is required
+        } @else if (houseForm.controls.Description.errors?.['minlength']) {
+        Description must be at least 10 characters
+        }
+      </p>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">
+        Location
+      </label>
+      @if (loadingLocations()) {
+      <div class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+        Loading locations...
+      </div>
+      } @else {
+      <select
+        formControlName="LocationId"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900"
+      >
+        <option [value]="0">Select a location</option>
+        @for (location of locations(); track location.id) {
+        <option [value]="location.id">
+          {{ location.city }}, {{ location.street }}, {{ location.buildingNumber }}
+        </option>
+        }
+      </select>
+      }
+      @if (houseForm.controls.LocationId.touched && houseForm.controls.LocationId.invalid) {
+      <p class="mt-1 text-xs text-red-600">Please select a location</p>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <app-input-field
+        label="Area (sq ft)"
+        type="number"
+        placeholder="120"
+        controlName="Area"
+        [error]="houseForm.controls.Area.touched && houseForm.controls.Area.invalid ? (houseForm.controls.Area.errors?.['required'] ? 'Area is required' : (houseForm.controls.Area.errors?.['min'] ? 'Area must be greater than 0' : '')) : ''"
+      ></app-input-field>
+
+      <app-input-field
+        label="Number of Rooms"
+        type="number"
+        placeholder="3"
+        controlName="NumberOfRooms"
+        [error]="houseForm.controls.NumberOfRooms.touched && houseForm.controls.NumberOfRooms.invalid ? (houseForm.controls.NumberOfRooms.errors?.['required'] ? 'Number of rooms is required' : (houseForm.controls.NumberOfRooms.errors?.['min'] ? 'Must be at least 1' : '')) : ''"
+      ></app-input-field>
+
+      <app-input-field
+        label="Number of Bathrooms"
+        type="number"
+        placeholder="2"
+        controlName="NumberOfBathrooms"
+        [error]="houseForm.controls.NumberOfBathrooms.touched && houseForm.controls.NumberOfBathrooms.invalid ? (houseForm.controls.NumberOfBathrooms.errors?.['required'] ? 'Number of bathrooms is required' : (houseForm.controls.NumberOfBathrooms.errors?.['min'] ? 'Must be at least 1' : '')) : ''"
+      ></app-input-field>
+    </div>
+
+    <app-input-field
+      label="Price Per Month (EGP)"
+      type="number"
+      placeholder="7500"
+      controlName="PricePerMonth"
+      [error]="houseForm.controls.PricePerMonth.touched && houseForm.controls.PricePerMonth.invalid ? (houseForm.controls.PricePerMonth.errors?.['required'] ? 'Price is required' : (houseForm.controls.PricePerMonth.errors?.['min'] ? 'Price must be greater than 0' : '')) : ''"
+    ></app-input-field>
+
+    <div class="flex gap-4 pt-4">
+      <button
+        type="submit"
+        [disabled]="houseForm.invalid || submitting()"
+        class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+      >
+        @if (submitting()) {
+        <span class="flex items-center gap-2">
+          <span class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+          Submitting...
+        </span>
+        } @else {
+        List Property
+        }
+      </button>
+      <a
+        routerLink="/dashboard"
+        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors inline-block text-center"
+      >
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+

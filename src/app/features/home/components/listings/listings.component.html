@@ -1,0 +1,39 @@
+<div class="mb-6 bg-white p-4 rounded-xl shadow">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+    <input class="w-full rounded-lg border border-gray-300 px-3 py-2" type="text" placeholder="Search"
+           [(ngModel)]="search" />
+    <select class="w-full rounded-lg border border-gray-300 px-3 py-2" [(ngModel)]="selectedCity">
+      <option value="">All cities</option>
+      <option *ngFor="let c of cities" [value]="c">{{ c }}</option>
+    </select>
+    <select class="w-full rounded-lg border border-gray-300 px-3 py-2" [(ngModel)]="selectedType">
+      <option value="">Any type</option>
+      <option value="Apartment">Apartment</option>
+      <option value="House">House</option>
+      <option value="Studio">Studio</option>
+    </select>
+    <input class="w-full rounded-lg border border-gray-300 px-3 py-2" type="number" min="0" placeholder="Min price" [(ngModel)]="minPrice" />
+    <input class="w-full rounded-lg border border-gray-300 px-3 py-2" type="number" min="0" placeholder="Max price" [(ngModel)]="maxPrice" />
+  </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  <div *ngFor="let item of filtered" class="bg-white rounded-xl shadow overflow-hidden flex flex-col">
+    <div class="h-40 bg-gray-200">
+      <img [src]="item.image" alt="" class="w-full h-full object-cover" />
+    </div>
+    <div class="p-4 flex-1 flex flex-col">
+      <div class="flex justify-between items-start">
+        <h3 class="text-lg font-semibold text-gray-900">{{ item.title }}</h3>
+        <div class="text-blue-600 font-semibold">${{ item.price }}</div>
+      </div>
+      <div class="text-sm text-gray-600 mt-1">{{ item.location }}</div>
+      <div class="text-xs text-gray-500 mt-1">{{ item.type }} • {{ item.city }}</div>
+      <div class="mt-auto pt-4">
+        <a [routerLink]="['/listings', item.id]" class="inline-flex items-center justify-center rounded-lg w-full bg-gray-900 text-white px-3 py-2 hover:bg-gray-800">View Details</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+

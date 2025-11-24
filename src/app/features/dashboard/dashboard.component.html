@@ -1,0 +1,419 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold text-gray-900 mb-8">
+    @if (isAdminUser()) {
+    Admin Dashboard
+    } @else {
+    My Properties
+    }
+  </h1>
+
+  @if (isAdminUser()) {
+  <!-- Admin View -->
+  <div class="space-y-8">
+    <!-- Add Amenity Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">
+        {{ editingAmenityId() ? 'Edit' : 'Add' }} Amenity
+      </h2>
+      <form
+        [formGroup]="amenityForm"
+        (ngSubmit)="onSubmitAmenity()"
+        class="space-y-4"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <app-input-field
+            label="Amenity Name"
+            type="text"
+            placeholder="Free Parking on Premises"
+            controlName="amenityName"
+            [error]="amenityForm.controls.amenityName.touched && amenityForm.controls.amenityName.invalid ? (amenityForm.controls.amenityName.errors?.['required'] ? 'Amenity name is required' : (amenityForm.controls.amenityName.errors?.['maxlength'] ? 'Maximum 50 characters' : '')) : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Category (Optional)"
+            type="text"
+            placeholder="Logistics"
+            controlName="category"
+            [error]="amenityForm.controls.category.touched && amenityForm.controls.category.invalid ? (amenityForm.controls.category.errors?.['maxlength'] ? 'Maximum 50 characters' : '') : ''"
+          ></app-input-field>
+        </div>
+        <div class="flex gap-4">
+          <button
+            type="submit"
+            [disabled]="amenityForm.invalid"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {{ editingAmenityId() ? 'Update' : 'Add' }} Amenity
+          </button>
+          @if (editingAmenityId()) {
+          <button
+            type="button"
+            (click)="cancelAmenityEdit()"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          }
+        </div>
+      </form>
+    </div>
+
+    <!-- Add Location Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">
+        {{ editingLocationId() ? 'Edit' : 'Add' }} Location
+      </h2>
+      <form
+        [formGroup]="locationForm"
+        (ngSubmit)="onSubmitLocation()"
+        class="space-y-4"
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <app-input-field
+            label="Country"
+            type="text"
+            placeholder="Egypt"
+            controlName="country"
+            [error]="locationForm.controls.country.touched && locationForm.controls.country.invalid ? 'Country is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="City"
+            type="text"
+            placeholder="Cairo"
+            controlName="city"
+            [error]="locationForm.controls.city.touched && locationForm.controls.city.invalid ? 'City is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Postal Code"
+            type="text"
+            placeholder="12345"
+            controlName="postalCode"
+            [error]="locationForm.controls.postalCode.touched && locationForm.controls.postalCode.invalid ? 'Postal code is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Street"
+            type="text"
+            placeholder="Main Street"
+            controlName="street"
+            [error]="locationForm.controls.street.touched && locationForm.controls.street.invalid ? 'Street is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Building Number"
+            type="text"
+            placeholder="10B"
+            controlName="buildingNumber"
+            [error]="locationForm.controls.buildingNumber.touched && locationForm.controls.buildingNumber.invalid ? 'Building number is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Latitude"
+            type="text"
+            placeholder="30.0444"
+            controlName="geoLat"
+            [error]="locationForm.controls.geoLat.touched && locationForm.controls.geoLat.invalid ? 'Latitude is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Longitude"
+            type="text"
+            placeholder="31.2357"
+            controlName="geoLng"
+            [error]="locationForm.controls.geoLng.touched && locationForm.controls.geoLng.invalid ? 'Longitude is required' : ''"
+          ></app-input-field>
+        </div>
+        <div class="flex gap-4">
+          <button
+            type="submit"
+            [disabled]="locationForm.invalid"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {{ editingLocationId() ? 'Update' : 'Add' }} Location
+          </button>
+          @if (editingLocationId()) {
+          <button
+            type="button"
+            (click)="cancelLocationEdit()"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          }
+        </div>
+      </form>
+    </div>
+
+    <!-- All Houses Table -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">All Houses</h2>
+      @if (loadingAdminData()) {
+      <div class="text-center py-8">Loading...</div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b">
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Title</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Location</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Price</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Rooms</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (house of allHouses(); track house.houseId) {
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-3 px-4">{{ house.title }}</td>
+              <td class="py-3 px-4">{{ house.formattedLocation }}</td>
+              <td class="py-3 px-4">{{ house.pricePerMonth | number }} EGP</td>
+              <td class="py-3 px-4">{{ house.numberOfRooms }}</td>
+              <td class="py-3 px-4">
+                <div class="flex gap-2">
+                  <button
+                    (click)="editHouse(house)"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    (click)="deleteHouse(house)"
+                    class="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-gray-500">No houses found</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
+
+    <!-- All Amenities Table -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">All Amenities</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b">
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Name</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Category</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (amenity of allAmenities(); track amenity.amenityId) {
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-3 px-4">{{ amenity.amenityName }}</td>
+              <td class="py-3 px-4">{{ amenity.category || '-' }}</td>
+              <td class="py-3 px-4">
+                <div class="flex gap-2">
+                  <button
+                    (click)="editAmenity(amenity)"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    (click)="deleteAmenity(amenity)"
+                    class="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="3" class="py-8 text-center text-gray-500">No amenities found</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- All Locations Table -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">All Locations</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b">
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">City</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Street</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Building</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Country</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (location of allLocations(); track location.id) {
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-3 px-4">{{ location.city }}</td>
+              <td class="py-3 px-4">{{ location.street }}</td>
+              <td class="py-3 px-4">{{ location.buildingNumber }}</td>
+              <td class="py-3 px-4">{{ location.country }}</td>
+              <td class="py-3 px-4">
+                <div class="flex gap-2">
+                  <button
+                    (click)="editLocation(location)"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    (click)="deleteLocation(location)"
+                    class="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-gray-500">No locations found</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  } @else {
+  <!-- Regular User View -->
+  <div class="space-y-6">
+    <div class="flex justify-between items-center">
+      <p class="text-gray-600">Manage your property listings</p>
+      <a
+        routerLink="/list-house"
+        class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+      >
+        Add New Property
+      </a>
+    </div>
+
+    @if (loadingHouses()) {
+    <div class="text-center py-12">Loading your properties...</div>
+    } @else {
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b bg-gray-50">
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Title</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Location</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Price</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Rooms</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Bathrooms</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Area</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (house of userHouses(); track house.houseId) {
+            @if (editingHouseId() === house.houseId) {
+            <tr class="border-b bg-blue-50">
+              <td colspan="7" class="py-4 px-4">
+                <form
+                  [formGroup]="houseEditForm"
+                  (ngSubmit)="saveHouseEdit()"
+                  class="space-y-4"
+                >
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <app-input-field
+                      label="Title"
+                      type="text"
+                      controlName="Title"
+                      [error]="houseEditForm.controls.Title.touched && houseEditForm.controls.Title.invalid ? 'Title is required' : ''"
+                    ></app-input-field>
+                    <app-input-field
+                      label="Price (EGP)"
+                      type="number"
+                      controlName="PricePerMonth"
+                      [error]="houseEditForm.controls.PricePerMonth.touched && houseEditForm.controls.PricePerMonth.invalid ? 'Price is required' : ''"
+                    ></app-input-field>
+                    <app-input-field
+                      label="Area"
+                      type="number"
+                      controlName="Area"
+                      [error]="houseEditForm.controls.Area.touched && houseEditForm.controls.Area.invalid ? 'Area is required' : ''"
+                    ></app-input-field>
+                  </div>
+                  <div class="flex gap-4">
+                    <button
+                      type="submit"
+                      [disabled]="houseEditForm.invalid"
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      (click)="cancelHouseEdit()"
+                      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+            } @else {
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-3 px-4">{{ house.title }}</td>
+              <td class="py-3 px-4">{{ house.formattedLocation }}</td>
+              <td class="py-3 px-4">{{ house.pricePerMonth | number }} EGP</td>
+              <td class="py-3 px-4">{{ house.numberOfRooms }}</td>
+              <td class="py-3 px-4">{{ house.numberOfBathrooms }}</td>
+              <td class="py-3 px-4">{{ house.area }} sq ft</td>
+              <td class="py-3 px-4">
+                <div class="flex gap-2">
+                  <button
+                    (click)="editHouse(house)"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    (click)="deleteHouse(house)"
+                    class="text-red-600 hover:text-red-800 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            }
+            } @empty {
+            <tr>
+              <td colspan="7" class="py-12 text-center text-gray-500">
+                <p class="mb-4">You haven't listed any properties yet.</p>
+                <a
+                  routerLink="/list-house"
+                  class="text-blue-600 hover:text-blue-800 font-semibold"
+                >
+                  List your first property →
+                </a>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>
+

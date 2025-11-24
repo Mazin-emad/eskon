@@ -1,0 +1,47 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+  <div class="w-full max-w-md bg-white shadow rounded-xl p-6">
+    <h1 class="text-2xl font-semibold text-gray-900 mb-1">Welcome back</h1>
+    <p class="text-sm text-gray-600 mb-6">Sign in to your account</p>
+
+    <form (ngSubmit)="submit()" [formGroup]="form" class="flex flex-col gap-4">
+      <app-input-field
+        label="Email"
+        type="email"
+        placeholder="you@example.com"
+        controlName="email"
+        [error]="form.controls.email.touched && form.controls.email.invalid ? (form.controls.email.errors?.['required'] ? 'Email is required' : (form.controls.email.errors?.['email'] ? 'Enter a valid email' : '')) : ''"
+      ></app-input-field>
+
+      <app-input-field
+        label="Password"
+        type="password"
+        controlName="password"
+        [error]="form.controls.password.touched && form.controls.password.invalid ? (form.controls.password.errors?.['required'] ? 'Password is required' : (form.controls.password.errors?.['minlength'] ? 'Minimum 6 characters' : '')) : ''"
+      ></app-input-field>
+
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2.5 hover:bg-gray-800 disabled:opacity-60"
+      >
+        @if (loading()) {
+        <span class="inline-flex items-center gap-2">
+          <span
+            class="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+          ></span>
+          Signing in...
+        </span>
+        } @else {
+        <span>Sign in</span>
+        }
+      </button>
+    </form>
+
+    <div class="mt-4 text-sm text-gray-600 flex justify-between">
+      <a routerLink="/auth/reset-password" class="hover:underline"
+        >Forgot password?</a
+      >
+      <a routerLink="/auth/register" class="hover:underline">Create account</a>
+    </div>
+  </div>
+</div>

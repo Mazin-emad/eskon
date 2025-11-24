@@ -1,0 +1,120 @@
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+  @if (loading()) {
+  <div class="flex justify-center items-center py-12">
+    <div
+      class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"
+    ></div>
+  </div>
+  } @else if (profile()) {
+  <div class="space-y-8">
+    <!-- Profile Information Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Profile Information</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            First Name
+          </label>
+          <div
+            class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 text-gray-900"
+          >
+            {{ profile()!.firstName }}
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Last Name
+          </label>
+          <div
+            class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 text-gray-900"
+          >
+            {{ profile()!.lastName }}
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Email
+          </label>
+          <div
+            class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 text-gray-900"
+          >
+            {{ profile()!.email }}
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Username
+          </label>
+          <div
+            class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 text-gray-900"
+          >
+            {{ profile()!.userName }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Change Password</h2>
+      <form
+        [formGroup]="changePasswordForm"
+        (ngSubmit)="onChangePassword()"
+        class="space-y-6"
+      >
+        <app-input-field
+          label="Current Password"
+          type="password"
+          controlName="currentPassword"
+          [error]="changePasswordForm.controls.currentPassword.touched && changePasswordForm.controls.currentPassword.invalid ? (changePasswordForm.controls.currentPassword.errors?.['required'] ? 'Current password is required' : '') : ''"
+        ></app-input-field>
+
+        <app-input-field
+          label="New Password"
+          type="password"
+          controlName="newPassword"
+          [error]="getPasswordError()"
+        ></app-input-field>
+
+        @if (changePasswordForm.controls.newPassword.touched &&
+        changePasswordForm.controls.newPassword.invalid) {
+        <div class="text-sm text-gray-600 mb-2">
+          Password must contain:
+          <ul class="list-disc list-inside mt-1 space-y-1">
+            <li>At least 8 characters</li>
+            <li>At least one uppercase letter</li>
+            <li>At least one lowercase letter</li>
+            <li>At least one number</li>
+            <li>At least one special character</li>
+          </ul>
+        </div>
+        }
+
+        <app-input-field
+          label="Confirm New Password"
+          type="password"
+          controlName="confirmPassword"
+          [error]="changePasswordForm.controls.confirmPassword.touched && changePasswordForm.controls.confirmPassword.invalid ? (changePasswordForm.controls.confirmPassword.errors?.['required'] ? 'Please confirm your new password' : '') : (changePasswordForm.errors?.['passwordMismatch'] && changePasswordForm.controls.confirmPassword.touched ? 'Passwords do not match' : '')"
+        ></app-input-field>
+
+        <div class="flex justify-end pt-4">
+          <button
+            type="submit"
+            [disabled]="changePasswordForm.invalid || changingPassword()"
+            class="px-6 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            @if (changingPassword()) {
+            <span class="flex items-center gap-2">
+              <span
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+              ></span>
+              Changing...
+            </span>
+            } @else { Change Password }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  }
+</div>

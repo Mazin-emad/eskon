@@ -1,0 +1,79 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+  <div class="w-full max-w-md bg-white shadow rounded-xl p-6">
+    <h1 class="text-2xl font-semibold text-gray-900 mb-1">
+      Create your account
+    </h1>
+    <p class="text-sm text-gray-600 mb-6">Join us in a minute</p>
+
+    <form (ngSubmit)="submit()" [formGroup]="form" class="flex flex-col gap-4">
+      <div class="grid grid-cols-2 gap-4">
+        <app-input-field
+          label="First Name"
+          type="text"
+          placeholder="John"
+          controlName="firstName"
+          [error]="form.controls.firstName.touched && form.controls.firstName.invalid ? (form.controls.firstName.errors?.['required'] ? 'First name is required' : (form.controls.firstName.errors?.['minlength'] ? 'Minimum 2 characters' : '')) : ''"
+        ></app-input-field>
+
+        <app-input-field
+          label="Last Name"
+          type="text"
+          placeholder="Doe"
+          controlName="lastName"
+          [error]="form.controls.lastName.touched && form.controls.lastName.invalid ? (form.controls.lastName.errors?.['required'] ? 'Last name is required' : (form.controls.lastName.errors?.['minlength'] ? 'Minimum 2 characters' : '')) : ''"
+        ></app-input-field>
+      </div>
+
+      <app-input-field
+        label="Email"
+        type="email"
+        placeholder="you@example.com"
+        controlName="email"
+        [error]="form.controls.email.touched && form.controls.email.invalid ? (form.controls.email.errors?.['required'] ? 'Email is required' : (form.controls.email.errors?.['email'] ? 'Enter a valid email' : '')) : ''"
+      ></app-input-field>
+
+      <app-input-field
+        label="Password"
+        type="password"
+        controlName="password"
+        [error]="getPasswordError()"
+      ></app-input-field>
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+      <p class="text-xs text-gray-600 mt-1">
+        Password must contain: minimum 8 characters, at least one uppercase
+        letter, one lowercase letter, one number, and one special character
+      </p>
+      }
+
+      <app-input-field
+        label="Confirm Password"
+        type="password"
+        controlName="confirmPassword"
+        [error]="form.controls.confirmPassword.touched && form.controls.confirmPassword.invalid ? (form.controls.confirmPassword.errors?.['required'] ? 'Please confirm your password' : '') : (form.errors?.['passwordMismatch'] && form.controls.confirmPassword.touched ? 'Passwords do not match' : '')"
+      ></app-input-field>
+
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2.5 hover:bg-gray-800 disabled:opacity-60"
+      >
+        @if (loading()) {
+        <span class="inline-flex items-center gap-2">
+          <span
+            class="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+          ></span>
+          Creating...
+        </span>
+        } @else {
+        <span>Create account</span>
+        }
+      </button>
+    </form>
+
+    <div class="mt-4 text-sm text-gray-600 text-right">
+      <a routerLink="/auth/login" class="hover:underline"
+        >Already have an account?</a
+      >
+    </div>
+  </div>
+</div>
