@@ -13,6 +13,7 @@ export interface HouseRequest {
   NumberOfRooms: number;
   PricePerMonth: number;
   NumberOfBathrooms: number;
+  amenityIds: number[];
 }
 
 /**
@@ -21,6 +22,7 @@ export interface HouseRequest {
 export interface HouseOwner {
   userId: string | null;
   fullName: string | null;
+  email: string | null;
 }
 
 /**
@@ -68,5 +70,6 @@ export interface HouseListItem {
   coverImageUrl: string;
   formattedLocation: string;
   isSavedByCurrentUser: boolean; // Note: API uses correct spelling here
+  ownerId: string | null; // Owner's user ID
 }
 

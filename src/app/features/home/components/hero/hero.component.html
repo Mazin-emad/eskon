@@ -1,33 +1,48 @@
-<section class="relative overflow-hidden">
-  <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-blue-400/10 to-transparent"></div>
-  <div class="container mx-auto px-4 py-20 relative">
-    <div class="text-center mb-8">
-      <h1 class="text-4xl md:text-5xl font-semibold text-gray-900">Find your next home easily</h1>
-      <p class="text-gray-600 mt-3">Search thousands of listings across cities and neighborhoods</p>
-    </div>
+<section class="relative overflow-hidden min-h-[600px] flex items-center">
+  <!-- Background Image with Overlay -->
+  <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" 
+       style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80');">
+    <div class="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-gray-900/70 to-gray-900/60"></div>
+  </div>
 
-    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-4 md:p-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <input class="w-full rounded-lg border border-gray-300 px-3 py-2" type="text" placeholder="City"
-               [(ngModel)]="city" (ngModelChange)="cityChange.emit($event)" />
+  <!-- Content -->
+  <div class="container mx-auto px-4 py-20 relative z-10">
+    <div class="max-w-3xl text-center mx-auto">
+      <!-- Marketing Header -->
+      <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+        Find Your Perfect Home
+      </h1>
+      
+      <!-- Marketing Text -->
+      <p class="text-xl md:text-2xl text-gray-100 mb-4 leading-relaxed">
+        Discover thousands of premium properties across Egypt
+      </p>
+      <p class="text-lg md:text-xl text-gray-200 mb-10 max-w-2xl mx-auto">
+        Whether you're looking for a cozy apartment, spacious house, or modern studio, 
+        we have the perfect place waiting for you.
+      </p>
 
-        <select class="w-full rounded-lg border border-gray-300 px-3 py-2"
-                [(ngModel)]="type" (ngModelChange)="typeChange.emit($event)">
-          <option value="">Any type</option>
-          <option value="Apartment">Apartment</option>
-          <option value="House">House</option>
-          <option value="Studio">Studio</option>
-        </select>
-
-        <input class="w-full rounded-lg border border-gray-300 px-3 py-2" type="number" min="0" placeholder="Min price"
-               [(ngModel)]="minPrice" (ngModelChange)="minPriceChange.emit(+$event || 0)" />
-        <input class="w-full rounded-lg border border-gray-300 px-3 py-2" type="number" min="0" placeholder="Max price"
-               [(ngModel)]="maxPrice" (ngModelChange)="maxPriceChange.emit(+$event || 0)" />
-      </div>
-
-      <div class="flex justify-center mt-4">
-        <a routerLink="/listings" class="inline-flex items-center gap-2 rounded-lg bg-blue-500 text-white px-5 py-2.5 hover:bg-blue-600">
-          Explore Listings
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a 
+          routerLink="/listings" 
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 text-white px-8 py-4 text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Browse Listings
+        </a>
+        
+        <a 
+          routerLink="/about-us" 
+          fragment="contact"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-gray-900 px-8 py-4 text-lg font-semibold hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Contact Us
         </a>
       </div>
     </div>

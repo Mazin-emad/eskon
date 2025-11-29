@@ -48,6 +48,7 @@ export class AuthService implements OnDestroy {
   private readonly accessTokenKey = 'accessToken';
   private readonly refreshTokenKey = 'refreshToken';
   private readonly pendingEmailKey = 'pendingEmail';
+  private readonly pendingResetEmailKey = 'pendingResetEmail';
   private readonly tokenExpirationCookieKey = 'tokenExpiration';
 
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -461,6 +462,26 @@ export class AuthService implements OnDestroy {
       localStorage.setItem(this.pendingEmailKey, email);
     } else {
       localStorage.removeItem(this.pendingEmailKey);
+    }
+  }
+
+  /**
+   * Gets the pending reset email from localStorage (stored after requesting password reset)
+   * @returns The pending reset email or null if not found
+   */
+  get pendingResetEmail(): string | null {
+    return localStorage.getItem(this.pendingResetEmailKey);
+  }
+
+  /**
+   * Sets the pending reset email in localStorage
+   * @param email The email to store
+   */
+  set pendingResetEmail(email: string | null) {
+    if (email) {
+      localStorage.setItem(this.pendingResetEmailKey, email);
+    } else {
+      localStorage.removeItem(this.pendingResetEmailKey);
     }
   }
 }

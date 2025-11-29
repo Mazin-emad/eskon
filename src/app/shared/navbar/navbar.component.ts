@@ -28,8 +28,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
         class="container mx-auto px-4 h-14 flex items-center justify-between"
       >
         <a routerLink="/" class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded bg-blue-500"></div>
-          <span class="font-semibold text-gray-900">Renty</span>
+          <img src="imgs/logo.png" alt="Eskon" class="w-10 h-10" />
         </a>
         <button
           class="md:hidden cursor-pointer p-2"
@@ -40,7 +39,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
           <span class="block w-6 h-0.5 bg-gray-900"></span>
         </button>
         <div class="hidden md:flex items-center gap-6">
-          <a routerLink="/" class="text-gray-700 hover:text-gray-900">Home</a>
           <a routerLink="/listings" class="text-gray-700 hover:text-gray-900"
             >Listings</a
           >
@@ -66,7 +64,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
             >
             <button
               (click)="logout()"
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              class="px-4 py-2 cursor-pointer rounded-lg border bg-red-500 text-white hover:bg-red-600"
             >
               Logout
             </button>

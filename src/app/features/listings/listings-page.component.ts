@@ -1,16 +1,24 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Input, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  signal,
+  inject,
+  computed,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { HousingService } from '../../../../core/services/housing.service';
-import { SavedListService } from '../../../../core/services/saved-list.service';
-import { AuthService } from '../../../../auth/services/auth.service';
-import { ToastService } from '../../../../shared/toast/toast.service';
-import { HouseListItem } from '../../../../core/models/housing.models';
+import { HousingService } from '../../core/services/housing.service';
+import { SavedListService } from '../../core/services/saved-list.service';
+import { AuthService } from '../../auth/services/auth.service';
+import { ToastService } from '../../shared/toast/toast.service';
+import { HouseListItem } from '../../core/models/housing.models';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 /**
- * Listing display interface for home page
+ * Listing display interface
  */
 interface ListingDisplay {
   id: number;
@@ -26,35 +34,41 @@ interface ListingDisplay {
   isSaved: boolean;
 }
 
+/**
+ * Listings page component
+ * Displays all house listings with filters and pagination
+ */
 @Component({
-  selector: 'app-listings',
+  selector: 'app-listings-page',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './listings.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './listings-page.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ListingsComponent implements OnInit {
+export class ListingsPageComponent implements OnInit {
   private readonly housingService = inject(HousingService);
   private readonly savedListService = inject(SavedListService);
   private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  @Input() city = '';
-  @Input() type = '';
-  @Input() minPrice = 0;
-  @Input() maxPrice = 5000;
-  @Input() limit: number = 8; // Limit for home page (first 8 listings)
-
-  search = '';
-  priceUpperBound = 5000;
-  selectedCity = '';
-  selectedType = '';
-  showSavedOnly = false;
-
   houses = signal<HouseListItem[]>([]);
   loading = signal(false);
   savingHouseIds = signal<Set<number>>(new Set());
+
+  // Filter state
+  search = signal('');
+  selectedCity = signal('');
+  selectedType = signal('');
+  minPrice = signal(0);
+  maxPrice = signal(0);
+  priceUpperBound = signal(5000);
+  showSavedOnly = signal(false);
+
+  // Pagination state
+  currentPage = signal(1);
+  itemsPerPage = signal(12);
+  itemsPerPageOptions = [6, 12, 24, 48];
 
   /**
    * Initializes the component and loads houses
@@ -76,8 +90,9 @@ export class ListingsComponent implements OnInit {
           this.houses.set(houses);
           // Calculate max price for filter
           if (houses.length > 0) {
-            const maxPrice = Math.max(...houses.map(h => h.pricePerMonth));
-            this.priceUpperBound = Math.ceil(maxPrice / 1000) * 1000; // Round up to nearest 1000
+            const maxPrice = Math.max(...houses.map((h) => h.pricePerMonth));
+            this.priceUpperBound.set(Math.ceil(maxPrice / 1000) * 1000); // Round up to nearest 1000
+            this.maxPrice.set(this.priceUpperBound());
           }
           this.loading.set(false);
         },
@@ -95,7 +110,7 @@ export class ListingsComponent implements OnInit {
     // Extract city from formattedLocation (e.g., "Cairo, Main Street" -> "Cairo")
     const locationParts = house.formattedLocation.split(',');
     const city = locationParts[0]?.trim() || '';
-    
+
     // Determine type based on number of rooms
     let type = 'Apartment';
     if (house.numberOfRooms >= 4) {
@@ -111,7 +126,9 @@ export class ListingsComponent implements OnInit {
       location: house.formattedLocation,
       city: city,
       type: type,
-      image: house.coverImageUrl || 'https://images.unsplash.com/photo-1560185008-b033106af2fb?q=80&w=1600&auto=format&fit=crop',
+      image:
+        house.coverImageUrl ||
+        'https://images.unsplash.com/photo-1560185008-b033106af2fb?q=80&w=1600&auto=format&fit=crop',
       rooms: house.numberOfRooms,
       bathrooms: house.numberOfBathrooms,
       area: house.area,
@@ -185,36 +202,56 @@ export class ListingsComponent implements OnInit {
   }
 
   /**
-   * Gets filtered and limited listings
+   * Gets filtered listings
    */
-  get filtered(): ListingDisplay[] {
-    const allListings = this.houses().map(h => this.toListingDisplay(h));
-    const city = (this.city || this.selectedCity).toLowerCase();
-    const type = (this.type || this.selectedType).toLowerCase();
-    const min = this.minPrice || 0;
-    const max = this.maxPrice || this.priceUpperBound || 9999999;
-    const q = (this.search || '').toLowerCase();
-    
-    const filtered = allListings.filter(l => {
+  readonly filteredListings = computed(() => {
+    const allListings = this.houses().map((h) => this.toListingDisplay(h));
+    const city = this.selectedCity().toLowerCase();
+    const type = this.selectedType().toLowerCase();
+    const min = this.minPrice() || 0;
+    const max = this.maxPrice() || this.priceUpperBound() || 9999999;
+    const q = this.search().toLowerCase();
+    const savedOnly = this.showSavedOnly();
+
+    return allListings.filter((l) => {
       const matchesCity = !city || l.city.toLowerCase().includes(city);
       const matchesType = !type || l.type.toLowerCase() === type;
       const matchesPrice = l.price >= min && l.price <= max;
-      const matchesQ = !q || l.title.toLowerCase().includes(q) || l.location.toLowerCase().includes(q);
-      const matchesSaved = !this.showSavedOnly || l.isSaved;
+      const matchesQ =
+        !q ||
+        l.title.toLowerCase().includes(q) ||
+        l.location.toLowerCase().includes(q);
+      const matchesSaved = !savedOnly || l.isSaved;
       return matchesCity && matchesType && matchesPrice && matchesQ && matchesSaved;
     });
+  });
 
-    // Limit to first N items for home page
-    return this.limit > 0 ? filtered.slice(0, this.limit) : filtered;
-  }
+  /**
+   * Gets paginated listings
+   */
+  readonly paginatedListings = computed(() => {
+    const filtered = this.filteredListings();
+    const startIndex = (this.currentPage() - 1) * this.itemsPerPage();
+    const endIndex = startIndex + this.itemsPerPage();
+    return filtered.slice(startIndex, endIndex);
+  });
+
+  /**
+   * Gets total pages
+   */
+  readonly totalPages = computed(() => {
+    return Math.ceil(
+      this.filteredListings().length / this.itemsPerPage()
+    );
+  });
 
   /**
    * Gets unique cities from houses
    */
-  get cities(): string[] {
+  readonly cities = computed(() => {
     const allHouses = this.houses();
     const citySet = new Set<string>();
-    allHouses.forEach(house => {
+    allHouses.forEach((house) => {
       const locationParts = house.formattedLocation.split(',');
       const city = locationParts[0]?.trim();
       if (city) {
@@ -222,7 +259,87 @@ export class ListingsComponent implements OnInit {
       }
     });
     return Array.from(citySet).sort();
+  });
+
+  /**
+   * Resets filters
+   */
+  resetFilters(): void {
+    this.search.set('');
+    this.selectedCity.set('');
+    this.selectedType.set('');
+    this.minPrice.set(0);
+    this.maxPrice.set(this.priceUpperBound());
+    this.showSavedOnly.set(false);
+    this.currentPage.set(1);
+  }
+
+  /**
+   * Changes page
+   */
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+      // Scroll to top of listings
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  /**
+   * Gets page numbers for pagination
+   */
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      // Show all pages if 7 or fewer
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show first page, last page, current page, and pages around current
+      pages.push(1);
+      if (current > 3) {
+        pages.push(-1); // Ellipsis marker
+      }
+      for (
+        let i = Math.max(2, current - 1);
+        i <= Math.min(total - 1, current + 1);
+        i++
+      ) {
+        pages.push(i);
+      }
+      if (current < total - 2) {
+        pages.push(-1); // Ellipsis marker
+      }
+      pages.push(total);
+    }
+
+    return pages;
+  }
+
+  /**
+   * Gets the range of items currently displayed
+   */
+  readonly displayedRange = computed(() => {
+    const filtered = this.filteredListings();
+    const total = filtered.length;
+    if (total === 0) {
+      return { start: 0, end: 0, total: 0 };
+    }
+    const start = (this.currentPage() - 1) * this.itemsPerPage() + 1;
+    const end = Math.min(start + this.itemsPerPage() - 1, total);
+    return { start, end, total };
+  });
+
+  /**
+   * Changes items per page and resets to first page
+   */
+  changeItemsPerPage(newItemsPerPage: number): void {
+    this.itemsPerPage.set(newItemsPerPage);
+    this.currentPage.set(1);
   }
 }
-
 

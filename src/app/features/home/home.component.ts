@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HeroComponent } from './components/hero/hero.component';
@@ -8,6 +15,7 @@ import { AccountService } from '../../core/services/account.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { Profile } from '../../core/models/auth.models';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ProblemAndSolutionComponent } from '../about-us/problem-and-solution.component';
 
 /**
  * Home page component
@@ -16,9 +24,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, HeroComponent, ListingsComponent, FeaturesComponent],
+  imports: [
+    CommonModule,
+    HeroComponent,
+    ListingsComponent,
+    FeaturesComponent,
+    ProblemAndSolutionComponent,
+  ],
   templateUrl: './home.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit {
   private readonly accountService = inject(AccountService);
@@ -29,8 +43,8 @@ export class HomeComponent implements OnInit {
   city = '';
   type = '';
   minPrice = 0;
-  maxPrice = 5000;
-  
+  maxPrice = 10000;
+
   // Profile state for UI display
   profile = signal<Profile | null>(null);
   loading = signal(false);
@@ -51,8 +65,9 @@ export class HomeComponent implements OnInit {
    */
   private loadProfile(): void {
     this.loading.set(true);
-    
-    this.accountService.getProfile()
+
+    this.accountService
+      .getProfile()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (profile) => {
@@ -64,9 +79,7 @@ export class HomeComponent implements OnInit {
           // Just update local state
           this.profile.set(null);
           this.loading.set(false);
-        }
+        },
       });
   }
 }
-
-

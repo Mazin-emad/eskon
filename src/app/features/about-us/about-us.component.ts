@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -7,6 +13,7 @@ import { ToastService } from '../../shared/toast/toast.service';
 import { InputFieldComponent } from '../../shared/input-field/input-field.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
+import { ProblemAndSolutionComponent } from './problem-and-solution.component';
 
 /**
  * Team member interface
@@ -42,7 +49,13 @@ interface ContactFormData {
 @Component({
   selector: 'app-about-us',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, InputFieldComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ReactiveFormsModule,
+    InputFieldComponent,
+    ProblemAndSolutionComponent,
+  ],
   templateUrl: './about-us.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -71,7 +84,8 @@ export class AboutUsComponent {
     {
       name: 'Ahmed Mohamed',
       title: 'CEO & Founder',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
       socialMedia: {
         linkedin: 'https://linkedin.com/in/ahmed-mohamed',
         twitter: 'https://twitter.com/ahmed_mohamed',
@@ -81,7 +95,8 @@ export class AboutUsComponent {
     {
       name: 'Fatma Hassan',
       title: 'CTO',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
       socialMedia: {
         linkedin: 'https://linkedin.com/in/fatma-hassan',
         github: 'https://github.com/fatma-hassan',
@@ -91,7 +106,8 @@ export class AboutUsComponent {
     {
       name: 'Mohamed Ali',
       title: 'Head of Product',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop',
       socialMedia: {
         linkedin: 'https://linkedin.com/in/mohamed-ali',
         twitter: 'https://twitter.com/mohamed_ali',
@@ -101,7 +117,8 @@ export class AboutUsComponent {
     {
       name: 'Sara Ibrahim',
       title: 'Head of Marketing',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
       socialMedia: {
         linkedin: 'https://linkedin.com/in/sara-ibrahim',
         twitter: 'https://twitter.com/sara_ibrahim',
@@ -119,8 +136,13 @@ export class AboutUsComponent {
       return;
     }
 
-    if (!this.web3formsAccessKey || this.web3formsAccessKey === 'YOUR_WEB3FORMS_ACCESS_KEY') {
-      this.toast.error('Please configure Web3Forms access key in environment configuration');
+    if (
+      !this.web3formsAccessKey ||
+      this.web3formsAccessKey === 'YOUR_WEB3FORMS_ACCESS_KEY'
+    ) {
+      this.toast.error(
+        'Please configure Web3Forms access key in environment configuration'
+      );
       return;
     }
 
@@ -142,7 +164,9 @@ export class AboutUsComponent {
       .subscribe({
         next: (response: any) => {
           if (response.success) {
-            this.toast.success('Thank you! Your message has been sent successfully.');
+            this.toast.success(
+              'Thank you! Your message has been sent successfully.'
+            );
             this.contactForm.reset();
             this.submitted.set(true);
             // Reset submitted flag after 5 seconds
@@ -155,10 +179,11 @@ export class AboutUsComponent {
           this.submitting.set(false);
         },
         error: () => {
-          this.toast.error('An error occurred while sending your message. Please try again.');
+          this.toast.error(
+            'An error occurred while sending your message. Please try again.'
+          );
           this.submitting.set(false);
         },
       });
   }
 }
-

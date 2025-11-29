@@ -14,7 +14,7 @@
       [error]="houseForm.controls.Title.touched && houseForm.controls.Title.invalid ? (houseForm.controls.Title.errors?.['required'] ? 'Title is required' : (houseForm.controls.Title.errors?.['minlength'] ? 'Title must be at least 3 characters' : '')) : ''"
     ></app-input-field>
 
-    <div>
+    <div class="pt-4">
       <label class="block text-sm font-medium text-gray-700 mb-1">
         Description
       </label>
@@ -24,24 +24,55 @@
         placeholder="Describe your property..."
         class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900"
       ></textarea>
-      @if (houseForm.controls.Description.touched && houseForm.controls.Description.invalid) {
+      @if (houseForm.controls.Description.touched &&
+      houseForm.controls.Description.invalid) { @if
+      (houseForm.controls.Description.errors?.['required']) {
+      <p class="mt-1 text-xs text-red-600">Description is required</p>
+      } @else if (houseForm.controls.Description.errors?.['minlength']) {
       <p class="mt-1 text-xs text-red-600">
-        @if (houseForm.controls.Description.errors?.['required']) {
-        Description is required
-        } @else if (houseForm.controls.Description.errors?.['minlength']) {
         Description must be at least 10 characters
-        }
       </p>
-      }
+      } }
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">
+      <label class="block text-sm font-medium text-gray-700 mb-3">
         Location
       </label>
+      
+      <!-- Toggle between existing and new location -->
+      <div class="flex gap-4 mb-4">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="locationMode"
+            [checked]="!useNewLocation()"
+            (change)="toggleLocationMode()"
+            class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+          />
+          <span class="text-sm text-gray-700">Select existing location</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="locationMode"
+            [checked]="useNewLocation()"
+            (change)="toggleLocationMode()"
+            class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+          />
+          <span class="text-sm text-gray-700">Add new location</span>
+        </label>
+      </div>
+
+      @if (!useNewLocation()) {
+      <!-- Existing Location Selection -->
       @if (loadingLocations()) {
       <div class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
         Loading locations...
+      </div>
+      } @else if (locations().length === 0) {
+      <div class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-600">
+        No locations available. Please add a new location.
       </div>
       } @else {
       <select
@@ -49,15 +80,79 @@
         class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900"
       >
         <option [value]="0">Select a location</option>
-        @for (location of locations(); track location.id) {
+        @for (location of locations(); track $index) {
+        @if (location && location.id != null) {
         <option [value]="location.id">
-          {{ location.city }}, {{ location.street }}, {{ location.buildingNumber }}
+          {{ location.city || '' }}, {{ location.street || '' }},
+          {{ location.buildingNumber || '' }}
         </option>
         }
+        }
       </select>
-      }
-      @if (houseForm.controls.LocationId.touched && houseForm.controls.LocationId.invalid) {
+      } @if (houseForm.controls.LocationId.touched && isLocationIdInvalid()) {
       <p class="mt-1 text-xs text-red-600">Please select a location</p>
+      }
+      } @else {
+      <!-- New Location Form -->
+      <div [formGroup]="locationForm" class="space-y-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <app-input-field
+            label="Country"
+            type="text"
+            placeholder="Egypt"
+            controlName="country"
+            [error]="locationForm.controls.country.touched && locationForm.controls.country.invalid ? 'Country is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="City"
+            type="text"
+            placeholder="Cairo"
+            controlName="city"
+            [error]="locationForm.controls.city.touched && locationForm.controls.city.invalid ? 'City is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Postal Code"
+            type="text"
+            placeholder="12345"
+            controlName="postalCode"
+            [error]="locationForm.controls.postalCode.touched && locationForm.controls.postalCode.invalid ? 'Postal code is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Street"
+            type="text"
+            placeholder="Main Street"
+            controlName="street"
+            [error]="locationForm.controls.street.touched && locationForm.controls.street.invalid ? 'Street is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Building Number"
+            type="text"
+            placeholder="10B"
+            controlName="buildingNumber"
+            [error]="locationForm.controls.buildingNumber.touched && locationForm.controls.buildingNumber.invalid ? 'Building number is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Latitude"
+            type="text"
+            placeholder="30.0444"
+            controlName="geoLat"
+            [error]="locationForm.controls.geoLat.touched && locationForm.controls.geoLat.invalid ? 'Latitude is required' : ''"
+          ></app-input-field>
+
+          <app-input-field
+            label="Longitude"
+            type="text"
+            placeholder="31.2357"
+            controlName="geoLng"
+            [error]="locationForm.controls.geoLng.touched && locationForm.controls.geoLng.invalid ? 'Longitude is required' : ''"
+          ></app-input-field>
+        </div>
+      </div>
       }
     </div>
 
@@ -95,20 +190,54 @@
       [error]="houseForm.controls.PricePerMonth.touched && houseForm.controls.PricePerMonth.invalid ? (houseForm.controls.PricePerMonth.errors?.['required'] ? 'Price is required' : (houseForm.controls.PricePerMonth.errors?.['min'] ? 'Price must be greater than 0' : '')) : ''"
     ></app-input-field>
 
+    <div class="pt-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">
+        Amenities
+      </label>
+      @if (loadingAmenities()) {
+      <div class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+        Loading amenities...
+      </div>
+      } @else {
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border border-gray-300 rounded-lg max-h-64 overflow-y-auto"
+      >
+        @for (amenity of amenities(); track amenity.amenityId) {
+        <label
+          class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+        >
+          <input
+            type="checkbox"
+            [checked]="isAmenitySelected(amenity.amenityId)"
+            (change)="toggleAmenity(amenity.amenityId)"
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span class="text-sm text-gray-700">{{ amenity.amenityName }}</span>
+          @if (amenity.category) {
+          <span class="text-xs text-gray-500">({{ amenity.category }})</span>
+          }
+        </label>
+        } @empty {
+        <p class="text-sm text-gray-500 col-span-2">No amenities available</p>
+        }
+      </div>
+      }
+    </div>
+
     <div class="flex gap-4 pt-4">
       <button
         type="submit"
-        [disabled]="houseForm.invalid || submitting()"
+        [disabled]="(useNewLocation() ? locationForm.invalid : (houseForm.controls.LocationId.value === 0 || houseForm.controls.LocationId.value === null)) || houseForm.invalid || submitting()"
         class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
       >
         @if (submitting()) {
         <span class="flex items-center gap-2">
-          <span class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+          <span
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
+          ></span>
           Submitting...
         </span>
-        } @else {
-        List Property
-        }
+        } @else { List Property }
       </button>
       <a
         routerLink="/dashboard"
@@ -119,4 +248,3 @@
     </div>
   </form>
 </div>
-

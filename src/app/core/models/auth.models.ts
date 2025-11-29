@@ -55,8 +55,9 @@ export interface ForgetPasswordRequest {
  * Request payload for resetting password
  */
 export interface ResetPasswordRequest {
-  token: string;
-  newPassword: string;
+  Code: string; // Reset code from email link
+  Email: string; // User's email address
+  NewPassword: string; // New password
 }
 
 /**

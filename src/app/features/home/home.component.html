@@ -1,9 +1,4 @@
-<app-hero
-  [(city)]="city"
-  [(type)]="type"
-  [(minPrice)]="minPrice"
-  [(maxPrice)]="maxPrice"
-/>
+<app-hero />
 
 <section class="py-12">
   <div class="container mx-auto px-4">
@@ -12,14 +7,9 @@
       [type]="type"
       [minPrice]="minPrice"
       [maxPrice]="maxPrice"
+      [limit]="8"
     />
   </div>
 </section>
 
-<section class="py-16 bg-gray-50">
-  <div class="container mx-auto px-4">
-    <app-features />
-  </div>
-</section>
-
-
+<app-problem-and-solution />

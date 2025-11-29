@@ -16,6 +16,7 @@ import {
 import { HousingService } from '../../core/services/housing.service';
 import { LocationService } from '../../core/services/location.service';
 import { AmenityService } from '../../core/services/amenity.service';
+import { SavedListService } from '../../core/services/saved-list.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { AccountService } from '../../core/services/account.service';
 import { ToastService } from '../../shared/toast/toast.service';
@@ -25,6 +26,7 @@ import {
   HouseListItem,
   HouseRequest,
 } from '../../core/models/housing.models';
+import { HouseSummaryResponse } from '../../core/models/saved-list.models';
 import {
   LocationRequest,
   Location,
@@ -34,7 +36,7 @@ import {
   Amenity,
 } from '../../core/models/amenity.models';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isAdmin } from '../../core/utils/jwt.util';
+import { isAdmin, getUserId } from '../../core/utils/jwt.util';
 
 /**
  * Dashboard component
@@ -54,6 +56,7 @@ export class DashboardComponent implements OnInit {
   private readonly housingService = inject(HousingService);
   private readonly locationService = inject(LocationService);
   private readonly amenityService = inject(AmenityService);
+  private readonly savedListService = inject(SavedListService);
   private readonly authService = inject(AuthService);
   private readonly accountService = inject(AccountService);
   private readonly router = inject(Router);
@@ -66,6 +69,11 @@ export class DashboardComponent implements OnInit {
   // User houses
   userHouses = signal<HouseListItem[]>([]);
   loadingHouses = signal(false);
+
+  // Saved listings
+  savedHouses = signal<HouseSummaryResponse[]>([]);
+  loadingSavedHouses = signal(false);
+  removingHouseId = signal<number | null>(null);
 
   // Admin data
   allHouses = signal<HouseListItem[]>([]);
@@ -93,6 +101,7 @@ export class DashboardComponent implements OnInit {
   editingHouseId = signal<number | null>(null);
   editingLocationId = signal<number | null>(null);
   editingAmenityId = signal<number | null>(null);
+  selectedAmenityIds = signal<number[]>([]);
   houseEditForm = this.fb.nonNullable.group({
     Title: ['', [Validators.required, Validators.minLength(3)]],
     Description: ['', [Validators.required, Validators.minLength(10)]],
@@ -121,25 +130,95 @@ export class DashboardComponent implements OnInit {
       this.loadAdminData();
     } else {
       this.loadUserHouses();
+      this.loadSavedHouses();
     }
   }
 
   /**
    * Loads houses for regular users
+   * Filters to show only houses owned by the current user
    */
   private loadUserHouses(): void {
     this.loadingHouses.set(true);
+    const token = this.authService.accessToken;
+    const currentUserId = getUserId(token);
+
     this.housingService
       .getHouses()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (houses) => {
-          // Filter to show only user's houses (you may need to adjust this based on API response)
-          this.userHouses.set(houses);
+          // Filter to show only user's houses based on ownerId
+          if (currentUserId) {
+            const userHouses = houses.filter(house => house.ownerId === currentUserId);
+            this.userHouses.set(userHouses);
+          } else {
+            // If we can't get user ID, show empty list
+            this.userHouses.set([]);
+          }
           this.loadingHouses.set(false);
         },
         error: () => {
           this.loadingHouses.set(false);
+        },
+      });
+    
+    // Also load amenities for edit form
+    this.amenityService
+      .getAmenities()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (amenities) => {
+          this.allAmenities.set(amenities);
+        },
+        error: () => {
+          // Error handling is done by error interceptor
+        },
+      });
+  }
+
+  /**
+   * Loads saved houses for regular users
+   */
+  private loadSavedHouses(): void {
+    this.loadingSavedHouses.set(true);
+    this.savedListService
+      .getSavedHouses()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (houses) => {
+          this.savedHouses.set(houses);
+          this.loadingSavedHouses.set(false);
+        },
+        error: () => {
+          this.loadingSavedHouses.set(false);
+          // Error handling is done by error interceptor
+        },
+      });
+  }
+
+  /**
+   * Removes a house from saved list
+   */
+  removeFromSavedList(houseId: number): void {
+    if (!confirm('Are you sure you want to remove this listing from your saved list?')) {
+      return;
+    }
+
+    this.removingHouseId.set(houseId);
+    this.savedListService
+      .removeFromSavedList(houseId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.success('Removed from saved list');
+          // Reload saved houses
+          this.loadSavedHouses();
+          this.removingHouseId.set(null);
+        },
+        error: () => {
+          this.toast.error('Failed to remove from saved list');
+          this.removingHouseId.set(null);
         },
       });
   }
@@ -281,6 +360,17 @@ export class DashboardComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (fullHouse) => {
+          // Map amenity names to IDs for delete payload
+          const amenityIds: number[] = [];
+          if (fullHouse.amenities && fullHouse.amenities.length > 0) {
+            fullHouse.amenities.forEach((amenityName: string) => {
+              const amenity = this.allAmenities().find(a => a.amenityName === amenityName);
+              if (amenity) {
+                amenityIds.push(amenity.amenityId);
+              }
+            });
+          }
+          
           const payload: HouseRequest = {
             Area: fullHouse.area,
             Title: fullHouse.title,
@@ -289,6 +379,7 @@ export class DashboardComponent implements OnInit {
             NumberOfRooms: fullHouse.numberOfRooms,
             PricePerMonth: fullHouse.pricePerMonth,
             NumberOfBathrooms: fullHouse.numberOfBathrooms,
+            amenityIds: amenityIds,
           };
 
           this.housingService
@@ -327,6 +418,19 @@ export class DashboardComponent implements OnInit {
             NumberOfBathrooms: fullHouse.numberOfBathrooms,
             PricePerMonth: fullHouse.pricePerMonth,
           });
+          // Map amenity names to IDs
+          // The API returns amenities as string array (amenity names)
+          // We need to find matching amenity IDs from the allAmenities list
+          const amenityIds: number[] = [];
+          if (fullHouse.amenities && fullHouse.amenities.length > 0) {
+            fullHouse.amenities.forEach((amenityName: string) => {
+              const amenity = this.allAmenities().find(a => a.amenityName === amenityName);
+              if (amenity) {
+                amenityIds.push(amenity.amenityId);
+              }
+            });
+          }
+          this.selectedAmenityIds.set(amenityIds);
         },
       });
   }
@@ -343,7 +447,11 @@ export class DashboardComponent implements OnInit {
     const houseId = this.editingHouseId();
     if (!houseId) return;
 
-    const payload: HouseRequest = this.houseEditForm.getRawValue();
+    const formValue = this.houseEditForm.getRawValue();
+    const payload: HouseRequest = {
+      ...formValue,
+      amenityIds: this.selectedAmenityIds(),
+    };
 
     this.housingService
       .updateHouse(houseId, payload)
@@ -352,6 +460,7 @@ export class DashboardComponent implements OnInit {
         next: () => {
           this.toast.success('House updated successfully!');
           this.editingHouseId.set(null);
+          this.selectedAmenityIds.set([]);
           this.houseEditForm.reset();
           if (this.isAdminUser()) {
             this.loadAdminData();
@@ -367,7 +476,27 @@ export class DashboardComponent implements OnInit {
    */
   cancelHouseEdit(): void {
     this.editingHouseId.set(null);
+    this.selectedAmenityIds.set([]);
     this.houseEditForm.reset();
+  }
+
+  /**
+   * Toggles amenity selection for edit form
+   */
+  toggleEditAmenity(amenityId: number): void {
+    const current = this.selectedAmenityIds();
+    if (current.includes(amenityId)) {
+      this.selectedAmenityIds.set(current.filter(id => id !== amenityId));
+    } else {
+      this.selectedAmenityIds.set([...current, amenityId]);
+    }
+  }
+
+  /**
+   * Checks if an amenity is selected in edit form
+   */
+  isEditAmenitySelected(amenityId: number): boolean {
+    return this.selectedAmenityIds().includes(amenityId);
   }
 
   /**

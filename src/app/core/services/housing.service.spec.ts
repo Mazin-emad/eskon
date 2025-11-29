@@ -24,6 +24,7 @@ describe('HousingService', () => {
     NumberOfRooms: 3,
     PricePerMonth: 7500,
     NumberOfBathrooms: 2,
+    amenityIds: [0, 8, 3],
   };
 
   const mockHouse: House = {

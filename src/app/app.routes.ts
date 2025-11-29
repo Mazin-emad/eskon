@@ -24,5 +24,13 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+  },
+  {
+    path: 'listings',
+    loadComponent: () => import('./features/listings/listings-page.component').then(m => m.ListingsPageComponent)
+  },
+  {
+    path: 'listings/:id',
+    loadComponent: () => import('./features/listings/house-details.component').then(m => m.HouseDetailsComponent)
   }
 ];

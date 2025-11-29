@@ -350,6 +350,30 @@
                       [error]="houseEditForm.controls.Area.touched && houseEditForm.controls.Area.invalid ? 'Area is required' : ''"
                     ></app-input-field>
                   </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Amenities
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
+                      @for (amenity of allAmenities(); track amenity.amenityId) {
+                      <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <input
+                          type="checkbox"
+                          [checked]="isEditAmenitySelected(amenity.amenityId)"
+                          (change)="toggleEditAmenity(amenity.amenityId)"
+                          class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span class="text-sm text-gray-700">{{ amenity.amenityName }}</span>
+                        @if (amenity.category) {
+                        <span class="text-xs text-gray-500">({{ amenity.category }})</span>
+                        }
+                      </label>
+                      }
+                      @empty {
+                      <p class="text-sm text-gray-500 col-span-2">No amenities available</p>
+                      }
+                    </div>
+                  </div>
                   <div class="flex gap-4">
                     <button
                       type="submit"
@@ -413,6 +437,96 @@
       </div>
     </div>
     }
+
+    <!-- Saved Listings Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mt-6">
+      <div class="p-6 border-b">
+        <h2 class="text-2xl font-bold text-gray-900">Saved Listings</h2>
+        <p class="text-sm text-gray-600 mt-1">Manage your saved property listings</p>
+      </div>
+      @if (loadingSavedHouses()) {
+      <div class="text-center py-12 text-gray-500">Loading saved listings...</div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b bg-gray-50">
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Title</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Location</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Price</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Rooms</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Bathrooms</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Area</th>
+              <th class="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (house of savedHouses(); track house.houseId) {
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-3 px-4">
+                <a
+                  [routerLink]="['/listings', house.houseId]"
+                  class="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  {{ house.title }}
+                </a>
+              </td>
+              <td class="py-3 px-4 text-gray-700">{{ house.formattedLocation }}</td>
+              <td class="py-3 px-4 text-gray-700">{{ house.pricePerMonth | number }} EGP</td>
+              <td class="py-3 px-4 text-gray-700">{{ house.numberOfRooms }}</td>
+              <td class="py-3 px-4 text-gray-700">{{ house.numberOfBathrooms }}</td>
+              <td class="py-3 px-4 text-gray-700">{{ house.area }} sq ft</td>
+              <td class="py-3 px-4">
+                <div class="flex gap-2">
+                  <a
+                    [routerLink]="['/listings', house.houseId]"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    View
+                  </a>
+                  <button
+                    (click)="removeFromSavedList(house.houseId)"
+                    [disabled]="removingHouseId() === house.houseId"
+                    class="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    @if (removingHouseId() === house.houseId) {
+                    <span class="flex items-center gap-1">
+                      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Removing...
+                    </span>
+                    } @else {
+                    Remove
+                    }
+                  </button>
+                </div>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="7" class="py-8 text-center text-gray-500">
+                <div class="flex flex-col items-center gap-2">
+                  <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  <p>No saved listings yet</p>
+                  <a
+                    routerLink="/listings"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Browse listings →
+                  </a>
+                </div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
   </div>
   }
 </div>

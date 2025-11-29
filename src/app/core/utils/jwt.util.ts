@@ -49,3 +49,17 @@ export function isAdmin(token: string | null): boolean {
   return role === 'Admin' || role === 'admin';
 }
 
+/**
+ * Gets the user ID from a JWT token
+ * @param token The JWT token string
+ * @returns The user ID or null if not found
+ */
+export function getUserId(token: string | null): string | null {
+  if (!token) {
+    return null;
+  }
+  const payload = decodeJwtToken(token);
+  // Try common JWT claim names for user ID
+  return payload?.id || payload?.nameid || payload?.sub || payload?.userId || payload?.user_id || null;
+}
+

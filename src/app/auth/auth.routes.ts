@@ -32,5 +32,12 @@ export const AUTH_ROUTES: Routes = [
         (m) => m.ResetPasswordPage
       ),
   },
+  {
+    path: 'forgetPassword',
+    loadComponent: () =>
+      import('./pages/forget-password/forget-password.page').then(
+        (m) => m.ForgetPasswordPage
+      ),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
 ];
