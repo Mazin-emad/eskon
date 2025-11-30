@@ -93,25 +93,14 @@ export class HouseDetailsComponent implements OnInit {
           const currentUserId = getUserId(token);
           this.isOwner.set(house.owner.userId === currentUserId);
 
-          // Set images from mediaItems if available, otherwise use imageUrls
+          // Set images from mediaItems (backend always returns mediaItems with real mediaIds)
           if (house.mediaItems && house.mediaItems.length > 0) {
-            // Ensure mediaItems URLs have the base URL prepended
+            // URLs from backend are already full URLs, but ensure they're properly formatted
             const mediaItemsWithUrls = house.mediaItems.map((item) => ({
               ...item,
-              url: this.getFullImageUrl(item.url),
+              url: this.getFullImageUrl(item.url), // Handles both full and relative URLs
             }));
             this.houseImages.set(mediaItemsWithUrls);
-          } else if (house.imageUrls && house.imageUrls.length > 0) {
-            // Convert imageUrls to MediaItemResponse format for compatibility
-            const mediaItems: MediaItemResponse[] = house.imageUrls.map(
-              (url, index) => ({
-                mediaId: index + 1,
-                url: this.getFullImageUrl(url),
-                sortOrder: index,
-                isCover: index === 0,
-              })
-            );
-            this.houseImages.set(mediaItems);
           } else {
             this.houseImages.set([]);
           }

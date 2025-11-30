@@ -42,6 +42,12 @@ export class ImageGalleryComponent {
    * Deletes an image
    */
   deleteImage(mediaItemId: number): void {
+    // Check if this is a valid mediaId (must be positive)
+    if (mediaItemId <= 0) {
+      this.toast.error('Invalid image ID. Cannot delete this image.');
+      return;
+    }
+
     if (!confirm('Are you sure you want to delete this image?')) {
       return;
     }
@@ -81,6 +87,12 @@ export class ImageGalleryComponent {
    * Sets an image as cover
    */
   setCoverImage(mediaItemId: number): void {
+    // Check if this is a valid mediaId (must be positive)
+    if (mediaItemId <= 0) {
+      this.toast.error('Invalid image ID. Cannot set cover for this image.');
+      return;
+    }
+
     if (!this.houseId) {
       this.toast.error('House ID is required');
       return;
@@ -116,6 +128,13 @@ export class ImageGalleryComponent {
    */
   isSettingCover(mediaItemId: number): boolean {
     return this.settingCoverId() === mediaItemId;
+  }
+
+  /**
+   * Checks if an image has a valid mediaId for management
+   */
+  canManageImage(mediaItemId: number): boolean {
+    return mediaItemId > 0;
   }
 }
 
