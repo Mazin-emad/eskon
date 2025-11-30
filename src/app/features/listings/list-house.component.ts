@@ -17,11 +17,13 @@ import { AccountService } from '../../core/services/account.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { InputFieldComponent } from '../../shared/input-field/input-field.component';
 import { RouterLink } from '@angular/router';
-import { HouseRequest } from '../../core/models/housing.models';
+import { HouseRequest, House } from '../../core/models/housing.models';
 import { Location, LocationRequest } from '../../core/models/location.models';
 import { Amenity } from '../../core/models/amenity.models';
+import { MediaItemResponse } from '../../core/models/media-item-response.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
+import { ImageUploadComponent } from '../../shared/image-upload/image-upload.component';
 
 /**
  * List House page component
@@ -30,7 +32,7 @@ import { switchMap } from 'rxjs';
 @Component({
   selector: 'app-list-house',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputFieldComponent, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, InputFieldComponent, RouterLink, ImageUploadComponent],
   templateUrl: './list-house.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -51,8 +53,11 @@ export class ListHouseComponent implements OnInit {
   amenities = signal<Amenity[]>([]);
   loadingLocations = signal(false);
   loadingAmenities = signal(false);
+  creatingLocation = signal(false);
   selectedAmenityIds = signal<number[]>([]);
   useNewLocation = signal(false);
+  createdHouseId = signal<number | null>(null);
+  showImageUpload = signal(false);
 
   houseForm = this.fb.nonNullable.group({
     Title: ['', [Validators.required, Validators.minLength(3)]],
@@ -100,28 +105,24 @@ export class ListHouseComponent implements OnInit {
       .subscribe({
         next: (locations) => {
           try {
-            // Filter out any invalid locations and ensure all required fields exist
-            // Handle both 'id' and 'locationId' property names
-            const validLocations = (Array.isArray(locations) ? locations : [])
-              .filter((loc) => {
-                // Strict validation: must be an object with a valid id
-                if (!loc || typeof loc !== 'object' || Array.isArray(loc)) return false;
-                const id = loc.id ?? loc.locationId;
-                if (id == null || id === undefined) return false;
-                const numId = Number(id);
-                if (isNaN(numId) || numId <= 0) return false;
-                return true;
-              })
+            // Simple validation - just ensure it's an array
+            if (!Array.isArray(locations)) {
+              this.locations.set([]);
+              this.loadingLocations.set(false);
+              return;
+            }
+
+            // Filter out null/undefined and ensure id exists, normalize id to number
+            const validLocations = locations
+              .filter((loc) => loc != null && typeof loc === 'object' && (loc.id != null || (loc as any).locationId != null))
               .map((loc) => {
-                // Normalize the location object to ensure it has 'id' property
-                const normalizedLoc = { ...loc };
-                if (!normalizedLoc.id && normalizedLoc.locationId) {
-                  normalizedLoc.id = normalizedLoc.locationId;
-                }
-                // Ensure id is a number
-                normalizedLoc.id = Number(normalizedLoc.id);
-                return normalizedLoc;
+                const id = loc.id ?? (loc as any).locationId;
+                return {
+                  ...loc,
+                  id: Number(id)
+                } as Location;
               });
+
             this.locations.set(validLocations);
           } catch (error) {
             console.error('Error processing locations:', error);
@@ -194,6 +195,47 @@ export class ListHouseComponent implements OnInit {
   }
 
   /**
+   * Creates a new location and adds it to the locations list
+   * Then switches back to existing location mode and selects the new location
+   */
+  addLocation(): void {
+    if (this.locationForm.invalid) {
+      this.locationForm.markAllAsTouched();
+      return;
+    }
+
+    this.creatingLocation.set(true);
+    const payload: LocationRequest = this.locationForm.getRawValue();
+
+    this.locationService
+      .addLocation(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (newLocation) => {
+          // Add the new location to the locations list
+          const currentLocations = this.locations();
+          this.locations.set([...currentLocations, newLocation]);
+
+          // Switch back to existing location mode
+          this.useNewLocation.set(false);
+
+          // Select the newly created location
+          this.houseForm.patchValue({ LocationId: newLocation.id });
+
+          // Clear the location form
+          this.locationForm.reset();
+
+          this.toast.success('Location added successfully!');
+          this.creatingLocation.set(false);
+        },
+        error: () => {
+          // Error handling is done by error interceptor
+          this.creatingLocation.set(false);
+        },
+      });
+  }
+
+  /**
    * Checks if LocationId is invalid (0, null, undefined, or empty)
    * Helper method for template validation
    */
@@ -202,6 +244,34 @@ export class ListHouseComponent implements OnInit {
     if (!value) return true;
     const numValue = Number(value);
     return isNaN(numValue) || numValue === 0;
+  }
+
+  /**
+   * Handles images uploaded event
+   */
+  onImagesUploaded(responses: MediaItemResponse[]): void {
+    this.toast.success(`Successfully uploaded ${responses.length} image(s)`);
+    // Optionally navigate after images are uploaded
+    // this.router.navigate(['/dashboard']);
+  }
+
+  /**
+   * Skips image upload and navigates to dashboard
+   */
+  skipImageUpload(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
+  /**
+   * Resets the form to create another house
+   */
+  createAnotherHouse(): void {
+    this.showImageUpload.set(false);
+    this.createdHouseId.set(null);
+    this.houseForm.reset();
+    this.locationForm.reset();
+    this.selectedAmenityIds.set([]);
+    this.useNewLocation.set(false);
   }
 
   /**
@@ -220,7 +290,6 @@ export class ListHouseComponent implements OnInit {
       if (
         !locationIdValue ||
         locationIdValue === 0 ||
-        locationIdValue === '0' ||
         isNaN(locationIdNum) ||
         locationIdNum === 0
       ) {
@@ -261,13 +330,11 @@ export class ListHouseComponent implements OnInit {
           takeUntilDestroyed(this.destroyRef)
         )
         .subscribe({
-          next: () => {
-            this.toast.success('House listed successfully!');
-            this.houseForm.reset();
-            this.locationForm.reset();
-            this.selectedAmenityIds.set([]);
-            this.useNewLocation.set(false);
-            this.router.navigate(['/listings']);
+          next: (house: House) => {
+            this.toast.success('House listed successfully! You can now upload images.');
+            this.createdHouseId.set(house.houseId);
+            this.showImageUpload.set(true);
+            // Don't navigate yet - let user upload images first
           },
           error: () => {
             this.submitting.set(false);
@@ -297,11 +364,11 @@ export class ListHouseComponent implements OnInit {
         .addHouse(payload)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: () => {
-            this.toast.success('House listed successfully!');
-            this.houseForm.reset();
-            this.selectedAmenityIds.set([]);
-            this.router.navigate(['/dashboard']);
+          next: (house: House) => {
+            this.toast.success('House listed successfully! You can now upload images.');
+            this.createdHouseId.set(house.houseId);
+            this.showImageUpload.set(true);
+            // Don't navigate yet - let user upload images first
           },
           error: () => {
             this.submitting.set(false);

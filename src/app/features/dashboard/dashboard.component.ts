@@ -25,6 +25,7 @@ import { RouterLink } from '@angular/router';
 import {
   HouseListItem,
   HouseRequest,
+  House,
 } from '../../core/models/housing.models';
 import { HouseSummaryResponse } from '../../core/models/saved-list.models';
 import {
@@ -35,8 +36,12 @@ import {
   AmenityRequest,
   Amenity,
 } from '../../core/models/amenity.models';
+import { MediaItemResponse } from '../../core/models/media-item-response.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isAdmin, getUserId } from '../../core/utils/jwt.util';
+import { ImageUploadComponent } from '../../shared/image-upload/image-upload.component';
+import { ImageGalleryComponent } from '../../shared/image-gallery/image-gallery.component';
+import { HouseMediaService } from '../../core/services/house-media.service';
 
 /**
  * Dashboard component
@@ -47,7 +52,7 @@ import { isAdmin, getUserId } from '../../core/utils/jwt.util';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputFieldComponent, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, InputFieldComponent, RouterLink, ImageUploadComponent, ImageGalleryComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -57,6 +62,7 @@ export class DashboardComponent implements OnInit {
   private readonly locationService = inject(LocationService);
   private readonly amenityService = inject(AmenityService);
   private readonly savedListService = inject(SavedListService);
+  private readonly houseMediaService = inject(HouseMediaService);
   private readonly authService = inject(AuthService);
   private readonly accountService = inject(AccountService);
   private readonly router = inject(Router);
@@ -102,6 +108,8 @@ export class DashboardComponent implements OnInit {
   editingLocationId = signal<number | null>(null);
   editingAmenityId = signal<number | null>(null);
   selectedAmenityIds = signal<number[]>([]);
+  editingHouseImages = signal<MediaItemResponse[]>([]);
+  loadingHouseImages = signal(false);
   houseEditForm = this.fb.nonNullable.group({
     Title: ['', [Validators.required, Validators.minLength(3)]],
     Description: ['', [Validators.required, Validators.minLength(10)]],
@@ -360,14 +368,11 @@ export class DashboardComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (fullHouse) => {
-          // Map amenity names to IDs for delete payload
+          // Extract amenity IDs from amenity objects
           const amenityIds: number[] = [];
           if (fullHouse.amenities && fullHouse.amenities.length > 0) {
-            fullHouse.amenities.forEach((amenityName: string) => {
-              const amenity = this.allAmenities().find(a => a.amenityName === amenityName);
-              if (amenity) {
-                amenityIds.push(amenity.amenityId);
-              }
+            fullHouse.amenities.forEach((amenity) => {
+              amenityIds.push(amenity.amenityId);
             });
           }
           
@@ -418,19 +423,21 @@ export class DashboardComponent implements OnInit {
             NumberOfBathrooms: fullHouse.numberOfBathrooms,
             PricePerMonth: fullHouse.pricePerMonth,
           });
-          // Map amenity names to IDs
-          // The API returns amenities as string array (amenity names)
-          // We need to find matching amenity IDs from the allAmenities list
+          // Extract amenity IDs from amenity objects
           const amenityIds: number[] = [];
           if (fullHouse.amenities && fullHouse.amenities.length > 0) {
-            fullHouse.amenities.forEach((amenityName: string) => {
-              const amenity = this.allAmenities().find(a => a.amenityName === amenityName);
-              if (amenity) {
-                amenityIds.push(amenity.amenityId);
-              }
+            fullHouse.amenities.forEach((amenity) => {
+              amenityIds.push(amenity.amenityId);
             });
           }
           this.selectedAmenityIds.set(amenityIds);
+          
+          // Load house images if available
+          if (fullHouse.mediaItems && fullHouse.mediaItems.length > 0) {
+            this.editingHouseImages.set(fullHouse.mediaItems);
+          } else {
+            this.editingHouseImages.set([]);
+          }
         },
       });
   }
@@ -477,7 +484,53 @@ export class DashboardComponent implements OnInit {
   cancelHouseEdit(): void {
     this.editingHouseId.set(null);
     this.selectedAmenityIds.set([]);
+    this.editingHouseImages.set([]);
     this.houseEditForm.reset();
+  }
+
+  /**
+   * Handles images uploaded event
+   */
+  onImagesUploaded(responses: MediaItemResponse[]): void {
+    // Reload house details to get updated images
+    const houseId = this.editingHouseId();
+    if (houseId) {
+      this.loadHouseImages(houseId);
+    }
+  }
+
+  /**
+   * Handles images changed event (after delete/set cover)
+   */
+  onImagesChanged(): void {
+    // Reload house details to get updated images
+    const houseId = this.editingHouseId();
+    if (houseId) {
+      this.loadHouseImages(houseId);
+    }
+  }
+
+  /**
+   * Loads house images
+   */
+  private loadHouseImages(houseId: number): void {
+    this.loadingHouseImages.set(true);
+    this.housingService
+      .getHouseById(houseId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (house) => {
+          if (house.mediaItems && house.mediaItems.length > 0) {
+            this.editingHouseImages.set(house.mediaItems);
+          } else {
+            this.editingHouseImages.set([]);
+          }
+          this.loadingHouseImages.set(false);
+        },
+        error: () => {
+          this.loadingHouseImages.set(false);
+        },
+      });
   }
 
   /**

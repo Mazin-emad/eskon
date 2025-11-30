@@ -1,6 +1,36 @@
 <div class="container mx-auto px-4 py-8 max-w-4xl">
   <h1 class="text-3xl font-bold text-gray-900 mb-8">List Your Property</h1>
 
+  @if (showImageUpload() && createdHouseId()) {
+  <!-- Image Upload Section -->
+  <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">Upload Images</h2>
+        <p class="text-sm text-gray-600 mt-1">Add images to your property listing</p>
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="skipImageUpload()"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+        >
+          Skip for now
+        </button>
+        <button
+          (click)="createAnotherHouse()"
+          class="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium"
+        >
+          Add Another Property
+        </button>
+      </div>
+    </div>
+    <app-image-upload
+      [houseId]="createdHouseId()!"
+      (imagesUploaded)="onImagesUploaded($event)"
+    ></app-image-upload>
+  </div>
+  }
+
   <form
     [formGroup]="houseForm"
     (ngSubmit)="onSubmit()"
@@ -151,6 +181,25 @@
             controlName="geoLng"
             [error]="locationForm.controls.geoLng.touched && locationForm.controls.geoLng.invalid ? 'Longitude is required' : ''"
           ></app-input-field>
+        </div>
+        <div class="flex justify-end pt-2">
+          <button
+            type="button"
+            (click)="addLocation()"
+            [disabled]="locationForm.invalid || creatingLocation()"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            @if (creatingLocation()) {
+            <span class="inline-flex items-center gap-2">
+              <span
+                class="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              ></span>
+              Adding...
+            </span>
+            } @else {
+            <span>Add Location</span>
+            }
+          </button>
         </div>
       </div>
       }

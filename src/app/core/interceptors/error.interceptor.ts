@@ -10,10 +10,40 @@ import { ApiErrorResponse } from '../models/auth.models';
 /**
  * Extracts user-friendly error messages from API error response
  * @param apiError The API error response object
+ * @param errorResponse The full HTTP error response
  * @returns Array of error messages to display
  */
-function extractErrorMessages(apiError: ApiErrorResponse): string[] {
+function extractErrorMessages(apiError: ApiErrorResponse, errorResponse?: HttpErrorResponse): string[] {
   const messages: string[] = [];
+
+  // Check for permission/access denied errors in the error message or stack trace
+  if (errorResponse) {
+    // Check error.error (could be string, object, or null)
+    let errorText = '';
+    if (errorResponse.error) {
+      if (typeof errorResponse.error === 'string') {
+        errorText = errorResponse.error;
+      } else {
+        errorText = JSON.stringify(errorResponse.error);
+      }
+    }
+    
+    // Also check error.message
+    if (errorResponse.message) {
+      errorText += ' ' + errorResponse.message;
+    }
+    
+    // Check for permission-related keywords (case-insensitive)
+    const lowerErrorText = errorText.toLowerCase();
+    if (lowerErrorText.includes('unauthorizedaccessexception') || 
+        lowerErrorText.includes('permission denied') ||
+        lowerErrorText.includes('access to the path') ||
+        lowerErrorText.includes('access denied') ||
+        lowerErrorText.includes('ioexception') && lowerErrorText.includes('permission')) {
+      messages.push('Unable to upload image: Server permission error. The server cannot write to the images directory. Please contact support.');
+      return messages;
+    }
+  }
 
   if (!apiError) {
     return messages;
@@ -100,7 +130,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         const apiError = error.error as ApiErrorResponse;
         
         // Extract error messages from API response
-        const errorMessages = extractErrorMessages(apiError);
+        const errorMessages = extractErrorMessages(apiError, error);
         
         if (errorMessages.length > 0) {
           errorMessage = formatErrorMessage(errorMessages);
@@ -132,7 +162,14 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             ? formatErrorMessage(errorMessages)
             : 'A conflict occurred. Please try again.';
         } else if (error.status === 500) {
-          errorMessage = 'A server error occurred. Please try again later.';
+          // Check if it's a permission error
+          if (errorMessages.length > 0 && errorMessages[0].includes('permission')) {
+            errorMessage = formatErrorMessage(errorMessages);
+          } else {
+            errorMessage = errorMessages.length > 0
+              ? formatErrorMessage(errorMessages)
+              : 'A server error occurred. Please try again later.';
+          }
         } else {
           // For other status codes, try to use API error message
           errorMessage = errorMessages.length > 0

@@ -10,7 +10,6 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HeroComponent } from './components/hero/hero.component';
 import { ListingsComponent } from './components/listings/listings.component';
-import { FeaturesComponent } from './components/features/features.component';
 import { AccountService } from '../../core/services/account.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { Profile } from '../../core/models/auth.models';
@@ -28,7 +27,6 @@ import { ProblemAndSolutionComponent } from '../about-us/problem-and-solution.co
     CommonModule,
     HeroComponent,
     ListingsComponent,
-    FeaturesComponent,
     ProblemAndSolutionComponent,
   ],
   templateUrl: './home.component.html',

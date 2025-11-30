@@ -165,6 +165,103 @@
           </thead>
           <tbody>
             @for (house of allHouses(); track house.houseId) {
+            @if (editingHouseId() === house.houseId) {
+            <tr class="border-b bg-blue-50">
+              <td colspan="5" class="py-4 px-4">
+                <form
+                  [formGroup]="houseEditForm"
+                  (ngSubmit)="saveHouseEdit()"
+                  class="space-y-4"
+                >
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <app-input-field
+                      label="Title"
+                      type="text"
+                      controlName="Title"
+                      [error]="houseEditForm.controls.Title.touched && houseEditForm.controls.Title.invalid ? 'Title is required' : ''"
+                    ></app-input-field>
+                    <app-input-field
+                      label="Price (EGP)"
+                      type="number"
+                      controlName="PricePerMonth"
+                      [error]="houseEditForm.controls.PricePerMonth.touched && houseEditForm.controls.PricePerMonth.invalid ? 'Price is required' : ''"
+                    ></app-input-field>
+                    <app-input-field
+                      label="Area"
+                      type="number"
+                      controlName="Area"
+                      [error]="houseEditForm.controls.Area.touched && houseEditForm.controls.Area.invalid ? 'Area is required' : ''"
+                    ></app-input-field>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Amenities
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
+                      @for (amenity of allAmenities(); track amenity.amenityId) {
+                      <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <input
+                          type="checkbox"
+                          [checked]="isEditAmenitySelected(amenity.amenityId)"
+                          (change)="toggleEditAmenity(amenity.amenityId)"
+                          class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span class="text-sm text-gray-700">{{ amenity.amenityName }}</span>
+                        @if (amenity.category) {
+                        <span class="text-xs text-gray-500">({{ amenity.category }})</span>
+                        }
+                      </label>
+                      }
+                      @empty {
+                      <p class="text-sm text-gray-500 col-span-2">No amenities available</p>
+                      }
+                    </div>
+                  </div>
+                  
+                  <!-- Image Management Section -->
+                  <div class="pt-4 border-t">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Images</h3>
+                    
+                    <!-- Image Gallery -->
+                    @if (loadingHouseImages()) {
+                    <div class="text-center py-4 text-gray-500">Loading images...</div>
+                    } @else {
+                    <app-image-gallery
+                      [houseId]="editingHouseId()!"
+                      [images]="editingHouseImages()"
+                      [canManage]="true"
+                      (imagesChanged)="onImagesChanged()"
+                      class="mb-4"
+                    ></app-image-gallery>
+                    
+                    <!-- Image Upload -->
+                    <app-image-upload
+                      [houseId]="editingHouseId()!"
+                      (imagesUploaded)="onImagesUploaded($event)"
+                    ></app-image-upload>
+                    }
+                  </div>
+                  
+                  <div class="flex gap-4 pt-4">
+                    <button
+                      type="submit"
+                      [disabled]="houseEditForm.invalid"
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      (click)="cancelHouseEdit()"
+                      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+            } @else {
             <tr class="border-b hover:bg-gray-50">
               <td class="py-3 px-4">{{ house.title }}</td>
               <td class="py-3 px-4">{{ house.formattedLocation }}</td>
@@ -187,6 +284,7 @@
                 </div>
               </td>
             </tr>
+            }
             } @empty {
             <tr>
               <td colspan="5" class="py-8 text-center text-gray-500">No houses found</td>
@@ -374,7 +472,32 @@
                       }
                     </div>
                   </div>
-                  <div class="flex gap-4">
+                  
+                  <!-- Image Management Section -->
+                  <div class="pt-4 border-t">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Images</h3>
+                    
+                    <!-- Image Gallery -->
+                    @if (loadingHouseImages()) {
+                    <div class="text-center py-4 text-gray-500">Loading images...</div>
+                    } @else {
+                    <app-image-gallery
+                      [houseId]="editingHouseId()!"
+                      [images]="editingHouseImages()"
+                      [canManage]="true"
+                      (imagesChanged)="onImagesChanged()"
+                      class="mb-4"
+                    ></app-image-gallery>
+                    
+                    <!-- Image Upload -->
+                    <app-image-upload
+                      [houseId]="editingHouseId()!"
+                      (imagesUploaded)="onImagesUploaded($event)"
+                    ></app-image-upload>
+                    }
+                  </div>
+                  
+                  <div class="flex gap-4 pt-4">
                     <button
                       type="submit"
                       [disabled]="houseEditForm.invalid"

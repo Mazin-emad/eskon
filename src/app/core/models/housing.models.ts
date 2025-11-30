@@ -1,3 +1,6 @@
+import { MediaItemResponse } from './media-item-response.model';
+import { Amenity } from './amenity.models';
+
 /**
  * Housing related data models
  */
@@ -52,8 +55,9 @@ export interface House {
   area: number;
   owner: HouseOwner;
   location: HouseLocation;
-  imageUrls: string[];
-  amenities: string[];
+  imageUrls: string[]; // Legacy field - URLs of images
+  mediaItems?: MediaItemResponse[]; // Media items with metadata (id, url, sortOrder, isCover)
+  amenities: Amenity[]; // Array of amenity objects with amenityId, amenityName, and category
   isSavedByCurrrentUser: boolean; // Note: API uses typo "CurrrentUser"
 }
 

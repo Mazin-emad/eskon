@@ -16,6 +16,7 @@ import { AuthService } from '../../auth/services/auth.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { HouseListItem } from '../../core/models/housing.models';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EnvironmentConfig } from '../../core/config/environment.config';
 
 /**
  * Listing display interface
@@ -126,9 +127,9 @@ export class ListingsPageComponent implements OnInit {
       location: house.formattedLocation,
       city: city,
       type: type,
-      image:
-        house.coverImageUrl ||
-        'https://images.unsplash.com/photo-1560185008-b033106af2fb?q=80&w=1600&auto=format&fit=crop',
+      image: house.coverImageUrl
+        ? this.getFullImageUrl(house.coverImageUrl)
+        : 'https://images.unsplash.com/photo-1560185008-b033106af2fb?q=80&w=1600&auto=format&fit=crop',
       rooms: house.numberOfRooms,
       bathrooms: house.numberOfBathrooms,
       area: house.area,
@@ -340,6 +341,27 @@ export class ListingsPageComponent implements OnInit {
   changeItemsPerPage(newItemsPerPage: number): void {
     this.itemsPerPage.set(newItemsPerPage);
     this.currentPage.set(1);
+  }
+
+  /**
+   * Prepends the API base URL to relative image URLs
+   * @param url The image URL (may be relative or absolute)
+   * @returns The full URL with base URL prepended if it was relative
+   */
+  private getFullImageUrl(url: string): string {
+    if (!url) {
+      return '';
+    }
+    // If URL is already absolute (starts with http:// or https://), return as-is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // If URL is relative (starts with /), prepend the API base URL
+    if (url.startsWith('/')) {
+      return `${EnvironmentConfig.apiBaseUrl}${url}`;
+    }
+    // Otherwise, assume it's relative and prepend base URL with /
+    return `${EnvironmentConfig.apiBaseUrl}/${url}`;
   }
 }
 
