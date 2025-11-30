@@ -28,7 +28,12 @@ import { EnvironmentConfig } from '../../core/config/environment.config';
 @Component({
   selector: 'app-house-details',
   standalone: true,
-  imports: [CommonModule, RouterLink, ImageUploadComponent, ImageGalleryComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ImageUploadComponent,
+    ImageGalleryComponent,
+  ],
   templateUrl: './house-details.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -82,33 +87,35 @@ export class HouseDetailsComponent implements OnInit {
       .subscribe({
         next: (house) => {
           this.house.set(house);
-          
+
           // Check if current user is the owner
           const token = this.authService.accessToken;
           const currentUserId = getUserId(token);
           this.isOwner.set(house.owner.userId === currentUserId);
-          
+
           // Set images from mediaItems if available, otherwise use imageUrls
           if (house.mediaItems && house.mediaItems.length > 0) {
             // Ensure mediaItems URLs have the base URL prepended
-            const mediaItemsWithUrls = house.mediaItems.map(item => ({
+            const mediaItemsWithUrls = house.mediaItems.map((item) => ({
               ...item,
-              url: this.getFullImageUrl(item.url)
+              url: this.getFullImageUrl(item.url),
             }));
             this.houseImages.set(mediaItemsWithUrls);
           } else if (house.imageUrls && house.imageUrls.length > 0) {
             // Convert imageUrls to MediaItemResponse format for compatibility
-            const mediaItems: MediaItemResponse[] = house.imageUrls.map((url, index) => ({
-              mediaId: index + 1,
-              url: this.getFullImageUrl(url),
-              sortOrder: index,
-              isCover: index === 0
-            }));
+            const mediaItems: MediaItemResponse[] = house.imageUrls.map(
+              (url, index) => ({
+                mediaId: index + 1,
+                url: this.getFullImageUrl(url),
+                sortOrder: index,
+                isCover: index === 0,
+              })
+            );
             this.houseImages.set(mediaItems);
           } else {
             this.houseImages.set([]);
           }
-          
+
           this.loading.set(false);
         },
         error: () => {
@@ -193,7 +200,7 @@ export class HouseDetailsComponent implements OnInit {
    */
   getImageUrls(): string[] {
     const images = this.houseImages();
-    return images.map(img => img.url);
+    return images.map((img) => img.url);
   }
 
   /**
@@ -240,8 +247,12 @@ export class HouseDetailsComponent implements OnInit {
     operation.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         // Update the house's saved status
-        this.house.update(h => h ? { ...h, isSavedByCurrrentUser: !currentStatus } : null);
-        this.toast.success(currentStatus ? 'Removed from saved list' : 'Added to saved list');
+        this.house.update((h) =>
+          h ? { ...h, isSavedByCurrrentUser: !currentStatus } : null
+        );
+        this.toast.success(
+          currentStatus ? 'Removed from saved list' : 'Added to saved list'
+        );
         this.isSaving.set(false);
       },
       error: () => {
@@ -264,13 +275,12 @@ export class HouseDetailsComponent implements OnInit {
     const subject = encodeURIComponent(`Inquiry about ${house.title}`);
     const body = encodeURIComponent(
       `Hello ${house.owner.fullName || 'Owner'},\n\n` +
-      `I am interested in your property listing: ${house.title}\n\n` +
-      `Please contact me at your earliest convenience.\n\n` +
-      `Thank you!`
+        `I am interested in your property listing: ${house.title}\n\n` +
+        `Please contact me at your earliest convenience.\n\n` +
+        `Thank you!`
     );
-    const mailtoLink = `mailto:${house.owner.email}?subject=${subject}&body=${body}`;
-    
+    const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${house.owner.email}&subject=${subject}&body=${body}`;
+
     window.location.href = mailtoLink;
   }
 }
-

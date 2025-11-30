@@ -14,9 +14,13 @@ import { HousingService } from '../../core/services/housing.service';
 import { SavedListService } from '../../core/services/saved-list.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { ToastService } from '../../shared/toast/toast.service';
-import { HouseListItem } from '../../core/models/housing.models';
+import { AmenityService } from '../../core/services/amenity.service';
+import { HouseListItem, House } from '../../core/models/housing.models';
+import { Amenity } from '../../core/models/amenity.models';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EnvironmentConfig } from '../../core/config/environment.config';
+import { forkJoin, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
 /**
  * Listing display interface
@@ -50,18 +54,22 @@ export class ListingsPageComponent implements OnInit {
   private readonly housingService = inject(HousingService);
   private readonly savedListService = inject(SavedListService);
   private readonly authService = inject(AuthService);
+  private readonly amenityService = inject(AmenityService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   houses = signal<HouseListItem[]>([]);
+  housesWithDetails = signal<Map<number, House>>(new Map()); // Cache for house details with amenities
   loading = signal(false);
   savingHouseIds = signal<Set<number>>(new Set());
+  loadingAmenities = signal(false);
+  amenities = signal<Amenity[]>([]);
 
   // Filter state
   search = signal('');
   selectedCity = signal('');
   selectedType = signal('');
-  minPrice = signal(0);
+  selectedAmenityIds = signal<number[]>([]);
   maxPrice = signal(0);
   priceUpperBound = signal(5000);
   showSavedOnly = signal(false);
@@ -72,10 +80,11 @@ export class ListingsPageComponent implements OnInit {
   itemsPerPageOptions = [6, 12, 24, 48];
 
   /**
-   * Initializes the component and loads houses
+   * Initializes the component and loads houses and amenities
    */
   ngOnInit(): void {
     this.loadHouses();
+    this.loadAmenities();
   }
 
   /**
@@ -95,11 +104,87 @@ export class ListingsPageComponent implements OnInit {
             this.priceUpperBound.set(Math.ceil(maxPrice / 1000) * 1000); // Round up to nearest 1000
             this.maxPrice.set(this.priceUpperBound());
           }
+          // Clear house details cache when houses are reloaded
+          this.housesWithDetails.set(new Map());
           this.loading.set(false);
         },
         error: () => {
           this.loading.set(false);
           // Error handling is done by error interceptor
+        },
+      });
+  }
+
+  /**
+   * Loads amenities from API
+   */
+  private loadAmenities(): void {
+    this.loadingAmenities.set(true);
+    this.amenityService
+      .getAmenities()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (amenities) => {
+          this.amenities.set(amenities);
+          this.loadingAmenities.set(false);
+        },
+        error: () => {
+          this.loadingAmenities.set(false);
+          // Error handling is done by error interceptor
+        },
+      });
+  }
+
+  /**
+   * Toggles an amenity in the filter
+   */
+  toggleAmenity(amenityId: number): void {
+    const current = this.selectedAmenityIds();
+    if (current.includes(amenityId)) {
+      this.selectedAmenityIds.set(current.filter((id) => id !== amenityId));
+    } else {
+      this.selectedAmenityIds.set([...current, amenityId]);
+    }
+    this.currentPage.set(1);
+  }
+
+  /**
+   * Checks if an amenity is selected
+   */
+  isAmenitySelected(amenityId: number): boolean {
+    return this.selectedAmenityIds().includes(amenityId);
+  }
+
+  /**
+   * Loads house details for houses that need amenity filtering
+   */
+  private async loadHouseDetailsForFiltering(houseIds: number[]): Promise<void> {
+    const detailsCache = this.housesWithDetails();
+    const missingIds = houseIds.filter((id) => !detailsCache.has(id));
+
+    if (missingIds.length === 0) {
+      return; // All details already cached
+    }
+
+    // Fetch details for missing houses
+    const requests = missingIds.map((id) =>
+      this.housingService.getHouseById(id).pipe(
+        catchError(() => of(null)), // Handle errors gracefully
+        map((house) => ({ id, house }))
+      )
+    );
+
+    forkJoin(requests)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (results) => {
+          const newCache = new Map(detailsCache);
+          results.forEach(({ id, house }) => {
+            if (house) {
+              newCache.set(id, house);
+            }
+          });
+          this.housesWithDetails.set(newCache);
         },
       });
   }
@@ -209,21 +294,56 @@ export class ListingsPageComponent implements OnInit {
     const allListings = this.houses().map((h) => this.toListingDisplay(h));
     const city = this.selectedCity().toLowerCase();
     const type = this.selectedType().toLowerCase();
-    const min = this.minPrice() || 0;
     const max = this.maxPrice() || this.priceUpperBound() || 9999999;
     const q = this.search().toLowerCase();
     const savedOnly = this.showSavedOnly();
+    const selectedAmenityIds = this.selectedAmenityIds();
+    const detailsCache = this.housesWithDetails();
+
+    // If amenities are selected, trigger loading of house details
+    if (selectedAmenityIds.length > 0) {
+      const houseIds = this.houses().map((h) => h.houseId);
+      // Load details asynchronously (won't block filtering, but will update when loaded)
+      setTimeout(() => {
+        this.loadHouseDetailsForFiltering(houseIds);
+      }, 0);
+    }
 
     return allListings.filter((l) => {
       const matchesCity = !city || l.city.toLowerCase().includes(city);
       const matchesType = !type || l.type.toLowerCase() === type;
-      const matchesPrice = l.price >= min && l.price <= max;
+      const matchesPrice = l.price <= max;
       const matchesQ =
         !q ||
         l.title.toLowerCase().includes(q) ||
         l.location.toLowerCase().includes(q);
       const matchesSaved = !savedOnly || l.isSaved;
-      return matchesCity && matchesType && matchesPrice && matchesQ && matchesSaved;
+
+      // Filter by amenities if any are selected
+      let matchesAmenities = true;
+      if (selectedAmenityIds.length > 0) {
+        const houseDetails = detailsCache.get(l.id);
+        if (houseDetails && houseDetails.amenities) {
+          const houseAmenityIds = houseDetails.amenities.map((a) => a.amenityId);
+          // House must have ALL selected amenities
+          matchesAmenities = selectedAmenityIds.every((id) =>
+            houseAmenityIds.includes(id)
+          );
+        } else {
+          // If details not loaded yet, include it temporarily (will be filtered when details load)
+          // This allows the list to show while loading, then refine as details come in
+          matchesAmenities = true;
+        }
+      }
+
+      return (
+        matchesCity &&
+        matchesType &&
+        matchesPrice &&
+        matchesQ &&
+        matchesSaved &&
+        matchesAmenities
+      );
     });
   });
 
@@ -269,7 +389,7 @@ export class ListingsPageComponent implements OnInit {
     this.search.set('');
     this.selectedCity.set('');
     this.selectedType.set('');
-    this.minPrice.set(0);
+    this.selectedAmenityIds.set([]);
     this.maxPrice.set(this.priceUpperBound());
     this.showSavedOnly.set(false);
     this.currentPage.set(1);
